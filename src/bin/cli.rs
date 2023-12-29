@@ -1,10 +1,16 @@
 use clio_db::{error::ClioResult, models::LoginRequest};
+
+use reqwest::{header::AUTHORIZATION, Client};
 use std::io::{self};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     println!("cli");
     let user = read_login_credentials().unwrap();
     println!("{:?}", user);
+    println!("attempting to login");
+    let token = post_login_request(user).await;
+    println!("access token: {}", token.unwrap());
 }
 
 fn read_login_credentials() -> ClioResult<LoginRequest> {
@@ -22,4 +28,20 @@ fn read_login_credentials() -> ClioResult<LoginRequest> {
     password.pop();
 
     Ok(LoginRequest { username, password })
+}
+
+async fn post_login_request(request: LoginRequest) -> ClioResult<String> {
+    let uri = "http://localhost:3000/login".to_string();
+
+    let response = Client::new().post(uri).json(&request).send().await?;
+
+    let token = response
+        .headers()
+        .get(AUTHORIZATION)
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+
+    Ok(token)
 }
