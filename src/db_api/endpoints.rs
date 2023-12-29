@@ -3,11 +3,13 @@ use axum::response::IntoResponse;
 use axum::Json;
 
 use crate::auth::encode_token;
+use crate::engine::get_databases;
 use crate::models::LoginRequest;
 
 pub async fn get() -> impl IntoResponse {
     // add code here
-    "db get".to_string()
+    let result = get_databases();
+    Json(result)
 }
 
 pub async fn login(Json(request): Json<LoginRequest>) -> impl IntoResponse {
