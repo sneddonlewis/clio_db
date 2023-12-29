@@ -5,16 +5,25 @@ use std::io::{self};
 
 #[tokio::main]
 async fn main() {
+    if let Err(e) = run_cli().await {
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
+}
+
+async fn run_cli() -> ClioResult<()> {
     println!("cli");
-    let user = read_login_credentials().unwrap();
+    let user = read_login_credentials()?;
     println!("{:?}", user);
 
     println!("attempting to login");
-    let token = post_login_request(user).await.unwrap();
+    let token = post_login_request(user).await?;
     println!("access token: {}", &token);
 
-    let ping_response = ping(token).await.unwrap();
+    let ping_response = ping(token).await?;
     println!("ping response: {}", ping_response);
+
+    Ok(())
 }
 
 fn read_login_credentials() -> ClioResult<LoginRequest> {
