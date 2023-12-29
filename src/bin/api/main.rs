@@ -12,6 +12,8 @@ use clio_db::auth::{encode_token, get_public_jwk, AuthorizationMiddleware, Autho
 async fn main() {
     let jwks = Jwks(vec![get_public_jwk()]);
     let router = Router::new()
+        .route("/db", get(clio_db::db_api::endpoints::get))
+        .route_layer(from_extractor::<AuthorizationMiddleware>())
         .route("/ping", get(ping))
         .route_layer(from_extractor::<AuthorizationMiddleware>())
         .route("/login", post(login))
