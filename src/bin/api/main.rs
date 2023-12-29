@@ -1,22 +1,21 @@
-use axum::http::{HeaderMap, HeaderValue, StatusCode};
 use axum::middleware::from_extractor;
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
-use axum::{Extension, Json, Router};
-use clio_db::models::LoginRequest;
+use axum::{Extension, Router};
 use tokio::net::TcpListener;
 
-use clio_db::auth::{encode_token, get_public_jwk, AuthorizationMiddleware, Authorized, Jwks};
+use clio_db::auth::{get_public_jwk, AuthorizationMiddleware, Authorized, Jwks};
+use clio_db::db_api::endpoints;
 
 #[tokio::main]
 async fn main() {
     let jwks = Jwks(vec![get_public_jwk()]);
     let router = Router::new()
-        .route("/db", get(clio_db::db_api::endpoints::get))
+        .route("/db", get(endpoints::get))
         .route_layer(from_extractor::<AuthorizationMiddleware>())
         .route("/ping", get(ping))
         .route_layer(from_extractor::<AuthorizationMiddleware>())
-        .route("/login", post(login))
+        .route("/login", post(endpoints::login))
         .layer(Extension(jwks));
 
     let listener = TcpListener::bind("localhost:3000").await.unwrap();
@@ -29,18 +28,4 @@ async fn main() {
 async fn ping(Extension(claims): Extension<Authorized>) -> impl IntoResponse {
     println!("{}", claims.0.username);
     "pong".into_response()
-}
-
-async fn login(Json(request): Json<LoginRequest>) -> impl IntoResponse {
-    if request.username == "root".to_string() && request.password == "root".to_string() {
-        let token = encode_token(request.username.clone());
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            axum::http::header::AUTHORIZATION,
-            HeaderValue::try_from(token).unwrap(),
-        );
-        (headers,).into_response()
-    } else {
-        (StatusCode::UNAUTHORIZED).into_response()
-    }
 }
