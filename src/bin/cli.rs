@@ -8,9 +8,13 @@ async fn main() {
     println!("cli");
     let user = read_login_credentials().unwrap();
     println!("{:?}", user);
+
     println!("attempting to login");
-    let token = post_login_request(user).await;
-    println!("access token: {}", token.unwrap());
+    let token = post_login_request(user).await.unwrap();
+    println!("access token: {}", &token);
+
+    let ping_response = ping(token).await.unwrap();
+    println!("ping response: {}", ping_response);
 }
 
 fn read_login_credentials() -> ClioResult<LoginRequest> {
@@ -44,4 +48,18 @@ async fn post_login_request(request: LoginRequest) -> ClioResult<String> {
         .to_string();
 
     Ok(token)
+}
+
+async fn ping(bearer_token: String) -> ClioResult<String> {
+    let uri = "http://localhost:3000/ping".to_string();
+
+    let response = Client::new()
+        .get(uri)
+        .header(AUTHORIZATION, format!("Bearer {}", bearer_token))
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    Ok(response)
 }
