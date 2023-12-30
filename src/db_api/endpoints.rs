@@ -7,7 +7,6 @@ use crate::engine::get_databases;
 use crate::models::LoginRequest;
 
 pub async fn get() -> impl IntoResponse {
-    // add code here
     let result = get_databases();
     Json(result)
 }
